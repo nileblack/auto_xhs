@@ -101,6 +101,48 @@ node auto_xhs_upload.js /path/to/your/video.mp4 "英语学习打卡,anki" "这�
 
 额外内容将会添加在话题标签之后，可以是任何文本，包括表情符号、描述或其他信息。
 
+## 将脚本添加为 Automator 应用程序
+
+您可以将此脚本设置为 macOS 的 Automator 应用程序，以便通过图形界面轻松上传视频到小红书。以下是设置步骤：
+
+1. 打开 Automator 应用程序。
+2. 选择“新建文稿”，然后选择“应用程序”。
+3. 在左侧的“库”中，选择“实用工具”，然后将“运行 Shell 脚本”拖到右侧的工作区。
+4. 将以下 AppleScript 代码粘贴到“运行 Shell 脚本”操作中：
+
+```
+on run {input, parameters}
+	-- 获取选中的文件
+	set selectedFile to choose file with prompt "选择要上传到小红书的视频文件:"
+	set filePath to POSIX path of selectedFile
+	
+	-- 脚本路径
+	set scriptPath to "/Users/sam/projects/code123/auto_xhs/run_js_xhs_upload.sh"
+	
+	-- 可选：询问标签
+	set theTags to text returned of (display dialog "输入标签(用逗号分隔):" default answer "英语学习打卡,anki")
+	
+	-- 可选：询问额外内容
+	set theContent to text returned of (display dialog "输入额外内容:" default answer "")
+	
+	-- 执行脚本
+	if theContent is "" then
+		if theTags is "" then
+			do shell script "\"" & scriptPath & "\" \"" & filePath & "\""
+		else
+			do shell script "\"" & scriptPath & "\" \"" & filePath & "\" \"" & theTags & "\""
+		end if
+	else
+		do shell script "\"" & scriptPath & "\" \"" & filePath & "\" \"" & theTags & "\" \"" & theContent & "\""
+	end if
+	
+	-- 显示通知
+	display notification "小红书上传已开始" with title "小红书上传器"
+	
+	return input
+end run
+```
+
 ## 故障排除
 
 1. **无法连接到浏览器**：确保 Brave 浏览器已经以调试模式启动，并且端口为 9222。
