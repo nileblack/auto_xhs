@@ -509,23 +509,15 @@ end tell
     if (!page) {
       console.log('打开小红书创作者中心...');
       page = await browser.newPage();
-      await page.goto(XHS_CREATOR_URL, {
-        waitUntil: 'networkidle2'
-      });
     } else {
-      // 如果找到了，但不是发布页面，则导航到发布页面
-      const currentUrl = page.url();
-      if (!currentUrl.includes('publish/publish')) {
-        console.log('导航到小红书创作者中心发布页面...');
-        await page.goto(XHS_CREATOR_URL, {
-          waitUntil: 'networkidle2'
-        });
-      } else {
-        console.log('已在小红书创作者中心发布页面');
-        // 刷新页面以确保最新状态
-        await page.reload({ waitUntil: 'networkidle2' });
-      }
+      console.log('使用已打开的标签页...');
     }
+    
+    // 直接导航到发布页面
+    console.log('导航到小红书创作者中心发布页面...');
+    await page.goto(XHS_CREATOR_URL, {
+      waitUntil: 'networkidle2'
+    });
     
     // 激活标签页
     await page.bringToFront();
@@ -654,8 +646,28 @@ end tell
               );
               console.log('检测到上传已完成');
               
-              // 获取文件日期
-              const fileDate = new Date().toISOString().split('T')[0]; // 格式: YYYY-MM-DD
+              // 从文件名中提取日期
+              const fileName = path.basename(filePath);
+              // 尝试从文件名中提取日期，格式可能是YYYY-MM-DD或YYYYMMDD
+              let fileDate = '';
+              
+              // 尝试匹配YYYY-MM-DD格式
+              const dateMatch1 = fileName.match(/(\d{4}-\d{2}-\d{2})/);
+              if (dateMatch1) {
+                fileDate = dateMatch1[1];
+              } else {
+                // 尝试匹配YYYYMMDD格式
+                const dateMatch2 = fileName.match(/(\d{4})(\d{2})(\d{2})/);
+                if (dateMatch2) {
+                  fileDate = `${dateMatch2[1]}-${dateMatch2[2]}-${dateMatch2[3]}`;
+                } else {
+                  // 如果没有找到日期，使用当前日期
+                  fileDate = new Date().toISOString().split('T')[0];
+                  console.log('文件名中未找到日期，使用当前日期:', fileDate);
+                }
+              }
+              
+              console.log('使用日期:', fileDate);
               
               // 填写标题
               console.log('填写标题...');
@@ -851,48 +863,15 @@ end tell
                   await page.waitForTimeout(1000);
                   
                   const returnButtonClicked = await page.evaluate(() => {
-                    // 尝试多种选择器查找立即返回按钮
-                    const selectors = [
-                      // 常见的返回按钮选择器
-                      'button:contains("立即返回")',
-                      'a:contains("立即返回")',
-                      'button:contains("返回")',
-                      'a:contains("返回")',
-                      '.return-button',
-                      '.back-button',
-                      // 更通用的选择器
-                      '[class*="return"]',
-                      '[class*="back"]'
-                    ];
+                    // 使用btn类和"立即返回"文本内容查找按钮
+                    const buttons = document.querySelectorAll('.btn');
                     
-                    // 尝试每个选择器
-                    for (const selector of selectors) {
-                      try {
-                        const buttons = document.querySelectorAll(selector);
-                        if (buttons.length > 0) {
-                          // 找到按钮，记录信息并点击
-                          const button = buttons[0];
-                          console.log(`找到立即返回按钮: ${selector}`);
-                          console.log('按钮文本:', button.textContent.trim());
-                          button.click();
-                          return `点击立即返回按钮成功: ${selector}`;
-                        }
-                      } catch (e) {
-                        console.error(`选择器 ${selector} 出错:`, e);
+                    for (const button of buttons) {
+                      if (button.textContent.includes('立即返回')) {
+                        console.log('找到立即返回按钮');
+                        button.click();
+                        return '点击立即返回按钮成功';
                       }
-                    }
-                    
-                    // 如果上面的选择器都失败了，尝试查找任何包含"返回"文本的元素
-                    const allElements = Array.from(document.querySelectorAll('button, a, div, span'));
-                    const returnElement = allElements.find(el => 
-                      el.textContent.includes('立即返回') || 
-                      el.textContent.includes('返回')
-                    );
-                    
-                    if (returnElement) {
-                      console.log('通过文本内容找到返回按钮');
-                      returnElement.click();
-                      return '点击返回按钮成功: 通过文本内容';
                     }
                     
                     return '未找到立即返回按钮，可能已自动返回或界面已更新';
