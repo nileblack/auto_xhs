@@ -1,0 +1,13 @@
+{
+  "name": "xhs-auto-upload",
+  "version": "1.0.0",
+  "description": "小红书自动上传脚本 - 连接到已打开的 Brave 浏览器",
+  "main": "auto_xhs_upload.js",
+  "scripts": {
+    "start": "node auto_xhs_upload.js"
+  },
+  "dependencies": {
+    "puppeteer": "^21.5.0",
+    "clipboardy": "^2.3.0"
+  }
+} 
