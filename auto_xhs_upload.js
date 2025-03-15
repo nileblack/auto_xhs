@@ -58,11 +58,11 @@ async function runAppleScript(script) {
   }
 }
 
-// 检查 Brave 浏览器是否正在运行
+// 检查 Chrome 浏览器是否正在运行
 async function isBraveRunning() {
   const script = `
 tell application "System Events"
-  set isRunning to exists (processes where name is "Brave Browser")
+  set isRunning to exists (processes where name is "Google Chrome")
   return isRunning
 end tell
   `;
@@ -71,23 +71,23 @@ end tell
   return result === 'true';
 }
 
-// 使用 AppleScript 激活 Brave 浏览器
+// 使用 AppleScript 激活 Chrome 浏览器
 async function activateBrave() {
   const script = `
-tell application "Brave Browser"
+tell application "Google Chrome"
   activate
 end tell
   `;
   
   await runAppleScript(script);
-  console.log('已激活 Brave 浏览器');
+  console.log('已激活 Chrome 浏览器');
   return true;
 }
 
 // 使用 AppleScript 打开小红书创作者中心
 async function openXhsCreatorWithAppleScript() {
   const script = `
-tell application "Brave Browser"
+tell application "Google Chrome"
   activate
   open location "${XHS_CREATOR_URL}"
 end tell
@@ -98,10 +98,10 @@ end tell
   return true;
 }
 
-// 使用 AppleScript 检查 Brave 浏览器中是否有小红书创作者中心标签页
+// 使用 AppleScript 检查 Chrome 浏览器中是否有小红书创作者中心标签页
 async function hasXhsCreatorTab() {
   const script = `
-tell application "Brave Browser"
+tell application "Google Chrome"
   set foundTab to false
   set windowCount to count windows
   repeat with w from 1 to windowCount
@@ -224,42 +224,42 @@ async function isPortAvailable(port) {
   }
 }
 
-// 启动 Brave 浏览器并设置调试端口
+// 启动 Chrome 浏览器并设置调试端口
 async function launchBrave() {
-  console.log('启动 Brave 浏览器...');
+  console.log('启动 Chrome 浏览器...');
   
-  // 尝试使用 macOS 上的默认 Brave 路径
-  const bravePath = '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser';
+  // 尝试使用 macOS 上的默认 Chrome 路径
+  const chromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
   
-  // 检查 Brave 是否存在
-  if (!fs.existsSync(bravePath)) {
-    console.error('未找到 Brave 浏览器，请确保已安装');
+  // 检查 Chrome 是否存在
+  if (!fs.existsSync(chromePath)) {
+    console.error('未找到 Chrome 浏览器，请确保已安装');
     return null;
   }
   
   // 检查默认调试端口是否可用
   const isPortFree = await isPortAvailable(DEFAULT_DEBUG_PORT);
   if (!isPortFree) {
-    console.log(`端口 ${DEFAULT_DEBUG_PORT} 已被占用，检查是否是 Brave 浏览器...`);
+    console.log(`端口 ${DEFAULT_DEBUG_PORT} 已被占用，检查是否是 Chrome 浏览器...`);
     
     try {
       const { stdout } = await execPromise(`lsof -i :${DEFAULT_DEBUG_PORT} | grep Brave`);
       if (stdout.trim()) {
-        console.log(`端口 ${DEFAULT_DEBUG_PORT} 已被 Brave 浏览器占用，尝试直接使用`);
+        console.log(`端口 ${DEFAULT_DEBUG_PORT} 已被 Chrome 浏览器占用，尝试直接使用`);
         return DEFAULT_DEBUG_PORT;
       }
     } catch (error) {
-      // 如果 lsof 命令失败或没有找到 Brave，继续尝试其他端口
+      // 如果 lsof 命令失败或没有找到 Chrome，继续尝试其他端口
     }
     
     // 尝试其他端口
     for (let port = 9223; port < 9300; port++) {
       const available = await isPortAvailable(port);
       if (available) {
-        console.log(`使用端口 ${port} 启动 Brave 浏览器`);
-        exec(`"${bravePath}" --remote-debugging-port=${port}`, (error) => {
+        console.log(`使用端口 ${port} 启动 Chrome 浏览器`);
+        exec(`"${chromePath}" --remote-debugging-port=${port}`, (error) => {
           if (error) {
-            console.error('启动 Brave 浏览器时出错:', error);
+            console.error('启动 Chrome 浏览器时出错:', error);
           }
         });
         
@@ -275,18 +275,18 @@ async function launchBrave() {
     return null;
   }
   
-  // 使用默认端口启动 Brave 浏览器
-  console.log(`使用默认端口 ${DEFAULT_DEBUG_PORT} 启动 Brave 浏览器`);
+  // 使用默认端口启动 Chrome 浏览器
+  console.log(`使用默认端口 ${DEFAULT_DEBUG_PORT} 启动 Chrome 浏览器`);
   
-  // 使用 open 命令启动 Brave 浏览器，这在 macOS 上更可靠
+  // 使用 open 命令启动 Chrome 浏览器，这在 macOS 上更可靠
   try {
-    await execPromise(`open -a "Brave Browser" --args --remote-debugging-port=${DEFAULT_DEBUG_PORT}`);
-    console.log('使用 open 命令启动 Brave 浏览器成功');
+    await execPromise(`open -a "Google Chrome" --args --remote-debugging-port=${DEFAULT_DEBUG_PORT}`);
+    console.log('使用 open 命令启动 Chrome 浏览器成功');
   } catch (error) {
     console.log('使用 open 命令启动失败，尝试直接启动');
-    exec(`"${bravePath}" --remote-debugging-port=${DEFAULT_DEBUG_PORT}`, (error) => {
+    exec(`"${chromePath}" --remote-debugging-port=${DEFAULT_DEBUG_PORT}`, (error) => {
       if (error) {
-        console.error('启动 Brave 浏览器时出错:', error);
+        console.error('启动 Chrome 浏览器时出错:', error);
       }
     });
   }
@@ -298,13 +298,13 @@ async function launchBrave() {
   return DEFAULT_DEBUG_PORT;
 }
 
-// 显示如何手动启动带调试端口的 Brave 浏览器的说明
+// 显示如何手动启动带调试端口的 Chrome 浏览器的说明
 function showManualInstructions() {
-  console.log('\n===== 手动启动带调试端口的 Brave 浏览器 =====');
-  console.log('1. 关闭所有 Brave 浏览器窗口');
+  console.log('\n===== 手动启动带调试端口的 Chrome 浏览器 =====');
+  console.log('1. 关闭所有 Chrome 浏览器窗口');
   console.log('2. 打开终端，运行以下命令:');
-  console.log('   /Applications/Brave\\ Browser.app/Contents/MacOS/Brave\\ Browser --remote-debugging-port=9222');
-  console.log('3. 等待 Brave 浏览器启动');
+  console.log('   /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --remote-debugging-port=9222');
+  console.log('3. 等待 Chrome 浏览器启动');
   console.log('4. 在浏览器中登录小红书');
   console.log('5. 重新运行此脚本');
   console.log('============================================\n');
@@ -377,7 +377,7 @@ async function main() {
     console.log(`将添加额外内容: ${additionalContent}`);
   }
   console.log('脚本将自动:');
-  console.log('1. 检查并激活 Brave 浏览器');
+  console.log('1. 检查并激活 Chrome 浏览器');
   console.log('2. 查找或打开小红书创作者中心');
   console.log('3. 查找并点击上传按钮 (el-button upload-button)');
   console.log('4. 在文件选择对话框中粘贴文件路径');
@@ -387,16 +387,16 @@ async function main() {
   clipboardy.writeSync(filePath);
   console.log('文件路径已复制到剪贴板');
   
-  // 检查 Brave 浏览器是否正在运行
+  // 检查 Chrome 浏览器是否正在运行
   const braveRunning = await isBraveRunning();
   if (!braveRunning) {
-    console.log('Brave 浏览器未运行，尝试启动...');
+    console.log('Chrome 浏览器未运行，尝试启动...');
     await launchBrave();
     // 等待浏览器启动
     await new Promise(resolve => setTimeout(resolve, 5000));
   } else {
-    console.log('Brave 浏览器已在运行');
-    // 激活 Brave 浏览器
+    console.log('Chrome 浏览器已在运行');
+    // 激活 Chrome 浏览器
     await activateBrave();
   }
   
@@ -414,24 +414,24 @@ async function main() {
   console.log('等待页面加载...');
   await new Promise(resolve => setTimeout(resolve, 5000));
   
-  // 尝试连接到已打开的 Brave 浏览器
+  // 尝试连接到已打开的 Chrome 浏览器
   let browser;
   let debugPort = await getBraveDebugPort();
   
   if (!debugPort) {
-    console.error('无法获取 Brave 浏览器调试端口，无法使用 Puppeteer 进行自动化');
-    console.log('请尝试手动启动带调试端口的 Brave 浏览器');
+    console.error('无法获取 Chrome 浏览器调试端口，无法使用 Puppeteer 进行自动化');
+    console.log('请尝试手动启动带调试端口的 Chrome 浏览器');
     
     // 显示手动启动说明
     showManualInstructions();
     
     // 询问用户是否要尝试手动启动
-    const tryManual = await askQuestion('是否要尝试手动启动带调试端口的 Brave 浏览器? (y/n): ');
+    const tryManual = await askQuestion('是否要尝试手动启动带调试端口的 Chrome 浏览器? (y/n): ');
     if (tryManual.toLowerCase() === 'y') {
-      // 关闭所有 Brave 浏览器窗口
-      console.log('尝试关闭所有 Brave 浏览器窗口...');
+      // 关闭所有 Chrome 浏览器窗口
+      console.log('尝试关闭所有 Chrome 浏览器窗口...');
       await runAppleScript(`
-tell application "Brave Browser"
+tell application "Google Chrome"
   quit
 end tell
       `);
@@ -439,13 +439,13 @@ end tell
       // 等待浏览器完全关闭
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // 启动带调试端口的 Brave 浏览器
+      // 启动带调试端口的 Chrome 浏览器
       const port = await launchBrave();
       if (port) {
-        console.log(`成功启动带调试端口 ${port} 的 Brave 浏览器`);
+        console.log(`成功启动带调试端口 ${port} 的 Chrome 浏览器`);
         debugPort = port;
       } else {
-        console.error('无法启动带调试端口的 Brave 浏览器');
+        console.error('无法启动带调试端口的 Chrome 浏览器');
         console.log('请按照上述说明手动启动，然后重新运行此脚本');
         rl.close();
         return;
@@ -457,8 +457,8 @@ end tell
     }
   }
   
-  // 连接到已打开的 Brave 浏览器
-  console.log(`连接到已打开的 Brave 浏览器 (端口: ${debugPort})...`);
+  // 连接到已打开的 Chrome 浏览器
+  console.log(`连接到已打开的 Chrome 浏览器 (端口: ${debugPort})...`);
   try {
     // 尝试使用 localhost 而不是 127.0.0.1
     browser = await puppeteer.connect({
@@ -473,8 +473,8 @@ end tell
         defaultViewport: null
       });
     } catch (secondError) {
-      console.error('连接到 Brave 浏览器失败:', error);
-      console.log('请确保 Brave 浏览器已经启动并开启了调试端口');
+      console.error('连接到 Chrome 浏览器失败:', error);
+      console.log('请确保 Chrome 浏览器已经启动并开启了调试端口');
       
       // 尝试直接使用 WebSocket URL
       try {
