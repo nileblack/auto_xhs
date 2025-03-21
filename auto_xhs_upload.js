@@ -171,22 +171,33 @@ end tell
 async function getBraveDebugPort() {
   // 首先尝试使用 lsof 命令查找监听端口
   try {
-    console.log('尝试使用 lsof 查找 Brave 浏览器调试端口...');
-    const { stdout: lsofOutput } = await execPromise('lsof -i :9222 | grep Brave');
+    console.log('尝试检查9222端口状态...');
+    const { stdout: lsofOutput } = await execPromise('lsof -i :9222');
     if (lsofOutput.trim()) {
-      console.log('通过 lsof 找到 Brave 浏览器正在使用端口 9222');
+      console.log('端口9222已在使用，尝试连接...');
       return 9222;
     }
   } catch (error) {
-    console.log('lsof 命令未找到 Brave 浏览器调试端口');
+    console.log('lsof 命令检查失败，尝试其他方法');
   }
   
-  // 如果 lsof 失败，尝试使用 ps 命令
+  // 尝试直接访问调试端点
+  try {
+    console.log('尝试直接访问调试端点...');
+    const { stdout } = await execPromise('curl -s http://localhost:9222/json/version');
+    if (stdout.trim()) {
+      console.log('成功访问调试端点');
+      return 9222;
+    }
+  } catch (error) {
+    console.log('访问调试端点失败');
+  }
+
+  // 如果上述方法都失败，检查进程
   return new Promise((resolve, reject) => {
-    // 在 macOS 上查找 Brave 浏览器进程
-    exec('ps -ax | grep -i "brave.*--remote-debugging-port" | grep -v grep', (error, stdout, stderr) => {
+    exec('ps -ax | grep -i "chrome.*--remote-debugging-port\\|brave.*--remote-debugging-port" | grep -v grep', (error, stdout, stderr) => {
       if (error) {
-        console.log('未找到已启动的 Brave 浏览器调试端口');
+        console.log('未找到带调试端口的浏览器进程');
         resolve(null);
         return;
       }
@@ -194,20 +205,11 @@ async function getBraveDebugPort() {
       // 尝试从进程信息中提取调试端口
       const match = stdout.match(/--remote-debugging-port=(\d+)/);
       if (match && match[1]) {
-        console.log(`找到 Brave 浏览器调试端口: ${match[1]}`);
+        console.log(`找到浏览器调试端口: ${match[1]}`);
         resolve(parseInt(match[1]));
       } else {
-        console.log('未找到 Brave 浏览器调试端口');
-        
-        // 如果没有找到调试端口，但 Brave 浏览器正在运行，尝试使用默认端口
-        exec('ps -ax | grep -i "brave" | grep -v grep', (err, stdoutBrave) => {
-          if (!err && stdoutBrave.trim()) {
-            console.log('Brave 浏览器正在运行，尝试使用默认端口 9222');
-            resolve(9222);
-          } else {
-            resolve(null);
-          }
-        });
+        console.log('未找到调试端口配置');
+        resolve(null);
       }
     });
   });
